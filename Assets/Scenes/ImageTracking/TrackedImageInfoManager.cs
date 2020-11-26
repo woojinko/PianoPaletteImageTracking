@@ -52,6 +52,8 @@ public class TrackedImageInfoManager : MonoBehaviour
 
     ARTrackedImageManager m_TrackedImageManager;
 
+    bool first_time = true;
+
     void Awake()
     {
         m_TrackedImageManager = GetComponent<ARTrackedImageManager>();
@@ -60,7 +62,9 @@ public class TrackedImageInfoManager : MonoBehaviour
     void OnEnable()
     {
         m_TrackedImageManager.trackedImagesChanged += OnTrackedImagesChanged;
-        m_SongAudioSource.PlayDelayed(5);
+        m_SongAudioSource.Play();
+        Debug.Log("on enable");
+        // m_SongAudioSource.PlayDelayed(5);
 
     }
 
@@ -92,6 +96,14 @@ public class TrackedImageInfoManager : MonoBehaviour
         if (trackedImage.trackingState != TrackingState.None)
         {
             planeGo.SetActive(true);
+
+            if (first_time) {
+                Debug.Log("first time");
+                m_SongAudioSource.Play();
+                first_time = false;
+            }
+            Debug.Log("every time baby");
+
 
             // The image extents is only valid when the image is being tracked
             trackedImage.transform.localScale = new Vector3(trackedImage.size.x, trackedImage.size.x, trackedImage.size.y);
