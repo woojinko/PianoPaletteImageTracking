@@ -19,9 +19,13 @@ public class PlacementCursorManager : MonoBehaviour
     [SerializeField]
     public bool placementCursorIsSurface = false;
 
+    [SerializeField]
+    public bool visible = true;
+
     private ARRaycastManager arRaycastManager;
 
     private GameObject placementCursor;
+    
 
 
     void Awake()
@@ -50,7 +54,7 @@ public class PlacementCursorManager : MonoBehaviour
 
     private void UpdateCursorIndicator()
     {
-        if (placementCursorIsSurface)
+        if (placementCursorIsSurface && visible)
         {
             placementCursor.SetActive(true);
             placementCursor.transform.SetPositionAndRotation(placementCursorPose.position, placementCursorPose.rotation);
@@ -59,5 +63,18 @@ public class PlacementCursorManager : MonoBehaviour
         {
             placementCursor.SetActive(false);
         }
+    }
+
+    public void ToggleCursorActive()
+    {
+        // if (visible) {
+        //     placementCursor.SetActive(false);
+        //     visible = false;
+        // }else {
+        //     placementCursor.SetActive(true);
+        //     placementCursor.transform.SetPositionAndRotation(placementCursorPose.position, placementCursorPose.rotation);
+        //     visible = true;
+        // }
+        visible = !visible;
     }
 }
