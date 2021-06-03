@@ -62,13 +62,13 @@ public class TrackedImageInfoManager : MonoBehaviour
     //   set { animationPrefabArray = value; }
     // }
 
-    [SerializeField]
-    [Tooltip("object")]
-    GameObject anim;
-
-    [SerializeField]
-    [Tooltip("object")]
-    GameObject animatedObject;
+    // [SerializeField]
+    // [Tooltip("object")]
+    // GameObject anim;
+    //
+    // [SerializeField]
+    // [Tooltip("object")]
+    // GameObject animatedObject;
 
 
     [SerializeField]
@@ -81,10 +81,9 @@ public class TrackedImageInfoManager : MonoBehaviour
       set { timeIntervalCounter = value; }
     }
 
-    [SerializeField]
     [Tooltip("The starting index of the prefab array to instantiate")]
     int prefabCounter;
-    public int PrefabCounter
+    private int PrefabCounter
     {
       get { return prefabCounter; }
       set { prefabCounter = value; }
@@ -107,11 +106,37 @@ public class TrackedImageInfoManager : MonoBehaviour
 
     bool first_time = true;
 
+    Transform trackedPose;
+
     private  void OnTimedEvent(object source, ElapsedEventArgs e)
     {
         // Console.WriteLine("The Elapsed event was raised at {0:HH:mm:ss.fff}",e.SignalTime);
         allowInitialize = true;
         // PrefabCounter++;
+
+        if (allowInitialize) {
+            //PrefabCounter++;
+
+            //animatedObject.SetActive(true);
+            allowInitialize = false;
+        //   Destroy(InitializedObject);
+        //   InitializedObject = Instantiate(animationPrefabArray[PrefabCounter], sessionOrigin.trackablesParent);
+            InitializedObject.SetActive(false);
+            PrefabCounter++;
+
+            // handler to end experience once we reach the end of the array
+            if (PrefabCounter >= animationPrefabArray.Length) {
+                aTimer.Enabled = false;
+                allowInitialize = false;
+                return;
+            }
+
+            InitializedObject = animationPrefabArray[PrefabCounter];
+            InitializedObject.transform.SetPositionAndRotation(trackedPose.position, trackedPose.rotation);
+            InitializedObject.SetActive(true);
+            aTimer.Interval = TimeIntervalCounter[PrefabCounter] * 1000;
+        }
+
     }
 
     void Awake()
@@ -119,7 +144,7 @@ public class TrackedImageInfoManager : MonoBehaviour
         m_TrackedImageManager = GetComponent<ARTrackedImageManager>();
         sessionOrigin = GetComponent<ARSessionOrigin>();
         //Instantiate(animationPrefabArray[2], sessionOrigin.trackablesParent);
-        animatedObject.SetActive(false);
+        // animatedObject.SetActive(false);
     }
 
     void OnEnable()
@@ -143,11 +168,13 @@ public class TrackedImageInfoManager : MonoBehaviour
     {
 
         if (first_time) {
-
+            trackedPose = trackedImage.transform;
             //PrefabCounter = 0;
 
             // InitializedObject = Instantiate(animationPrefabArray[0], sessionOrigin.trackablesParent) as GameObject;
             InitializedObject = animationPrefabArray[PrefabCounter];
+            InitializedObject.transform.SetPositionAndRotation(trackedPose.position, trackedPose.rotation);
+
             InitializedObject.SetActive(true);
             Debug.Log("first time");
             m_SongAudioSource.Play();
@@ -162,23 +189,27 @@ public class TrackedImageInfoManager : MonoBehaviour
         }
 
 
-        if (allowInitialize) {
-            //PrefabCounter++;
-            if (PrefabCounter >= animationPrefabArray.Length) {
-                aTimer.Enabled = false;
-                allowInitialize = false;
-                return;
-            }
-            //animatedObject.SetActive(true);
-            allowInitialize = false;
-        //   Destroy(InitializedObject);
-        //   InitializedObject = Instantiate(animationPrefabArray[PrefabCounter], sessionOrigin.trackablesParent);
-            InitializedObject.SetActive(false);
-            PrefabCounter++;
-            InitializedObject = animationPrefabArray[PrefabCounter];
-            InitializedObject.SetActive(true);
-            aTimer.Interval = TimeIntervalCounter[PrefabCounter] * 1000;
-        }
+        // if (allowInitialize) {
+        //     //PrefabCounter++;
+        //
+        //     //animatedObject.SetActive(true);
+        //     allowInitialize = false;
+        // //   Destroy(InitializedObject);
+        // //   InitializedObject = Instantiate(animationPrefabArray[PrefabCounter], sessionOrigin.trackablesParent);
+        //     InitializedObject.SetActive(false);
+        //     PrefabCounter++;
+        //
+        //     // handler to end experience once we reach the end of the array
+        //     if (PrefabCounter >= animationPrefabArray.Length) {
+        //         aTimer.Enabled = false;
+        //         allowInitialize = false;
+        //         return;
+        //     }
+        //
+        //     InitializedObject = animationPrefabArray[PrefabCounter];
+        //     InitializedObject.SetActive(true);
+        //     aTimer.Interval = TimeIntervalCounter[PrefabCounter] * 1000;
+        // }
 
       //return Instantiate(prefab, sessionOrigin.trackablesParent)
         // Set canvas camera
