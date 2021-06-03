@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Timers;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.XR.ARSubsystems;
@@ -10,6 +11,7 @@ using UnityEngine.XR.ARFoundation;
 /// detected image.
 /// </summary>
 [RequireComponent(typeof(ARTrackedImageManager))]
+[RequireComponent(typeof(ARSessionOrigin))]
 public class TrackedImageInfoManager : MonoBehaviour
 {
     [SerializeField]
@@ -50,18 +52,110 @@ public class TrackedImageInfoManager : MonoBehaviour
         set { m_SongAudioSource = value; }
     }
 
+    // [SerializeField]
+    // [Tooltip("The prefab array to instantiate")]
+    public GameObject[] animationPrefabArray;
+
+    // public List<GameObject> AnimationPrefabArray
+    // {
+    //   get { return animationPrefabArray; }
+    //   set { animationPrefabArray = value; }
+    // }
+
+    // [SerializeField]
+    // [Tooltip("object")]
+    // GameObject anim;
+    //
+    // [SerializeField]
+    // [Tooltip("object")]
+    // GameObject animatedObject;
+
+
+    [SerializeField]
+    [Tooltip("The corresponding time for each array to instantiate")]
+    int[] timeIntervalCounter;
+
+    public int[] TimeIntervalCounter
+    {
+      get { return timeIntervalCounter; }
+      set { timeIntervalCounter = value; }
+    }
+
+    [Tooltip("The starting index of the prefab array to instantiate")]
+    int prefabCounter;
+    private int PrefabCounter
+    {
+      get { return prefabCounter; }
+      set { prefabCounter = value; }
+    }
+
+    GameObject initializedObject;
+
+    public GameObject InitializedObject
+    {
+      get { return initializedObject; }
+      set { initializedObject = value; }
+    }
+
+    protected ARSessionOrigin sessionOrigin { get; private set; }
+
+    private  Timer aTimer;
+    private  bool allowInitialize = false;
+
     ARTrackedImageManager m_TrackedImageManager;
+
+    bool first_time = true;
+
+    Transform trackedPose;
+
+    private  void OnTimedEvent(object source, ElapsedEventArgs e)
+    {
+        // Console.WriteLine("The Elapsed event was raised at {0:HH:mm:ss.fff}",e.SignalTime);
+        allowInitialize = true;
+        // PrefabCounter++;
+
+        if (allowInitialize) {
+            //PrefabCounter++;
+
+            //animatedObject.SetActive(true);
+            allowInitialize = false;
+        //   Destroy(InitializedObject);
+        //   InitializedObject = Instantiate(animationPrefabArray[PrefabCounter], sessionOrigin.trackablesParent);
+            InitializedObject.SetActive(false);
+            PrefabCounter++;
+
+            // handler to end experience once we reach the end of the array
+            if (PrefabCounter >= animationPrefabArray.Length) {
+                aTimer.Enabled = false;
+                allowInitialize = false;
+                return;
+            }
+
+            InitializedObject = animationPrefabArray[PrefabCounter];
+            InitializedObject.transform.SetPositionAndRotation(trackedPose.position, trackedPose.rotation);
+            InitializedObject.SetActive(true);
+            aTimer.Interval = TimeIntervalCounter[PrefabCounter] * 1000;
+        }
+
+    }
 
     void Awake()
     {
         m_TrackedImageManager = GetComponent<ARTrackedImageManager>();
+        sessionOrigin = GetComponent<ARSessionOrigin>();
+        //Instantiate(animationPrefabArray[2], sessionOrigin.trackablesParent);
+        // animatedObject.SetActive(false);
     }
 
     void OnEnable()
     {
         m_TrackedImageManager.trackedImagesChanged += OnTrackedImagesChanged;
-        m_SongAudioSource.PlayDelayed(5);
-
+        Debug.Log("on enable");
+        // m_SongAudioSource.PlayDelayed(5);
+        //Instantiate(animationPrefabArray[3], sessionOrigin.trackablesParent);
+        foreach (var animation in animationPrefabArray) {
+            animation.SetActive(false);
+        }
     }
 
     void OnDisable()
@@ -69,8 +163,55 @@ public class TrackedImageInfoManager : MonoBehaviour
         m_TrackedImageManager.trackedImagesChanged -= OnTrackedImagesChanged;
     }
 
+    //called on every frame after tracked image from ar reference library first seen
     void UpdateInfo(ARTrackedImage trackedImage)
     {
+
+        if (first_time) {
+            trackedPose = trackedImage.transform;
+            //PrefabCounter = 0;
+
+            // InitializedObject = Instantiate(animationPrefabArray[0], sessionOrigin.trackablesParent) as GameObject;
+            InitializedObject = animationPrefabArray[PrefabCounter];
+            InitializedObject.transform.SetPositionAndRotation(trackedPose.position, trackedPose.rotation);
+
+            InitializedObject.SetActive(true);
+            Debug.Log("first time");
+            m_SongAudioSource.Play();
+            first_time = false;
+
+
+            aTimer = new System.Timers.Timer(10000);
+            aTimer.Elapsed += OnTimedEvent;
+
+            aTimer.Enabled = true;
+
+        }
+
+
+        // if (allowInitialize) {
+        //     //PrefabCounter++;
+        //
+        //     //animatedObject.SetActive(true);
+        //     allowInitialize = false;
+        // //   Destroy(InitializedObject);
+        // //   InitializedObject = Instantiate(animationPrefabArray[PrefabCounter], sessionOrigin.trackablesParent);
+        //     InitializedObject.SetActive(false);
+        //     PrefabCounter++;
+        //
+        //     // handler to end experience once we reach the end of the array
+        //     if (PrefabCounter >= animationPrefabArray.Length) {
+        //         aTimer.Enabled = false;
+        //         allowInitialize = false;
+        //         return;
+        //     }
+        //
+        //     InitializedObject = animationPrefabArray[PrefabCounter];
+        //     InitializedObject.SetActive(true);
+        //     aTimer.Interval = TimeIntervalCounter[PrefabCounter] * 1000;
+        // }
+
+      //return Instantiate(prefab, sessionOrigin.trackablesParent)
         // Set canvas camera
         var canvas = trackedImage.GetComponentInChildren<Canvas>();
         canvas.worldCamera = worldSpaceCanvasCamera;
@@ -93,6 +234,10 @@ public class TrackedImageInfoManager : MonoBehaviour
         {
             planeGo.SetActive(true);
 
+
+            Debug.Log("every time baby");
+
+
             // The image extents is only valid when the image is being tracked
             trackedImage.transform.localScale = new Vector3(trackedImage.size.x, trackedImage.size.x, trackedImage.size.y);
 
@@ -106,6 +251,7 @@ public class TrackedImageInfoManager : MonoBehaviour
         }
     }
 
+    //called on every frame
     void OnTrackedImagesChanged(ARTrackedImagesChangedEventArgs eventArgs)
     {
         foreach (var trackedImage in eventArgs.added)
